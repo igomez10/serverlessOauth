@@ -1,8 +1,10 @@
 package main
 
 import (
+	"net/http"
 	"testing"
 
+	"gopkg.in/oauth2.v3"
 	"gopkg.in/oauth2.v3/manage"
 	"gopkg.in/oauth2.v3/models"
 	"gopkg.in/oauth2.v3/store"
@@ -40,7 +42,7 @@ func TestCreateNewUser(t *testing.T) {
 	}
 
 	if user.GetSecret() != demoUserAlpha.GetSecret() {
-		errMessage := "Received wrong secret from storage, user secret should be %s but was %s"
+		errMessage := "wrong secret, user secret should be %s but was %s"
 		t.Errorf(errMessage, demoUserAlpha.GetSecret(), user.GetSecret())
 	}
 
@@ -65,14 +67,49 @@ func TestGetClientFromClientStorage(t *testing.T) {
 	manager := getBasicSetupWithDemoEntryStorage()
 	cl, err := manager.GetClient(IDToTest)
 	if err != nil {
-		t.Fatalf(`Error getting client with id "%s" - error: %s`, IDToTest, err)
+		errorMessage := `Error getting client with id "%s" - error: %s`
+		t.Fatalf(errorMessage, IDToTest, err)
 	}
 
 	if cl.GetSecret() != ExpectedSecret {
-		t.Errorf("Wrong secret, expected %s got %s", ExpectedSecret, cl.GetSecret())
+		errorMessage := "Wrong secret, expected %s got %s"
+		t.Errorf(errorMessage, ExpectedSecret, cl.GetSecret())
+	}
+	t.Logf("%+v", cl)
+
+}
+
+func TestGetAccessToken(t *testing.T) {
+
+	manager := getBasicSetupWithDemoEntryStorage()
+
+	testRequest, err := http.NewRequest("POST", "localhost/token", nil)
+	if err != nil {
+		t.Errorf("Error building request to test")
+		t.FailNow()
 	}
 
-	t.Logf("%+v", cl)
+	//testRequest.Form.Add("grant_type", "client_credentials")
+
+	// we need a grant type and an token generation request
+	generationRequest := &oauth2.TokenGenerateRequest{
+		ClientID:     demoClient.GetID(),
+		ClientSecret: demoClient.GetSecret(),
+		Request:      testRequest,
+	}
+
+	grantType := oauth2.ClientCredentials
+
+	token, err := manager.GenerateAccessToken(grantType, generationRequest)
+	if err != nil {
+		t.Errorf("error generate accessToken - Error: %s", err)
+		t.FailNow()
+	}
+
+	t.Logf("SUCCESS TOKEN %+v", token)
+}
+
+func TestUseToken(t *testing.T) {
 
 }
 

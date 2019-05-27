@@ -31,8 +31,9 @@ func main() {
 		Secret: "999999",
 		Domain: "http://localhost",
 	})
+	// set memory token storage as used storage for manager
 	manager.MapClientStorage(clientStore)
-
+	// create new authentication server using the current manager
 	srv := server.NewDefaultServer(manager)
 	srv.SetAllowGetAccessRequest(true)
 	srv.SetClientInfoHandler(server.ClientFormHandler)
